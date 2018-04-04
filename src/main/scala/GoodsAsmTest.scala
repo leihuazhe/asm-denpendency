@@ -33,7 +33,7 @@ object GoodsAsmTest {
 
   val callMap = mutable.Map[String, mutable.Set[String]]()
 
-  val serviceAction = mutable.Map[String, String]()
+  val serviceAction = mutable.Map[String, mutable.Set[String]]()
 
 
   /**
@@ -79,14 +79,25 @@ object GoodsAsmTest {
     AsmServiceHelper.formatMap(callAssociated, callMap)
     callMap.size
 
+    val actionMap = AsmServiceHelper.filterMethod(callMap, callClientSet)
+
+
+    //第九步 续
+
+
     //第十步1，找到所有的 Service 和 Client 类，存到 Map 中
     AsmServiceHelper.getServiceImpl(classIsServiceFile, services, servicesImpl)
     //第十步2，查找这些service和client的方法
     AsmServiceHelper.getServiceImplMethod(classIsServiceFile, servicesImpl, methodsImpl)
     println(methodsImpl)
 
-    //第十一步，查看实现类下的方法调用的 action
-    AsmServiceHelper.getServiceImplActionMethod(classIsServiceFile, serviceAction,methodsImpl)
+    //第十一步，查看实现类下的方法调用的 action   建立 service 里的方法 与 action 的 关系
+    AsmServiceHelper.getServiceImplActionMethod(classIsServiceFile, serviceAction, methodsImpl)
+    serviceAction.foreach(println)
+
+    // 第十二步 将查询出来的action关联到serive的具体方法中
+    val res = AsmServiceHelper.associatedServiceAndAction(serviceAction,actionMap)
+    res.foreach(println)
   }
 
   /*

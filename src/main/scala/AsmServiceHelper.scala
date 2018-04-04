@@ -162,7 +162,7 @@ object AsmServiceHelper {
     }
   }
 
-  def main(args: Array[String]): Unit = {
+  /*def main(args: Array[String]): Unit = {
     val callAssociated = mutable.Map[String, mutable.Set[String]]()
     callAssociated += ("a" -> mutable.Set("b", "c"))
     callAssociated += ("b" -> mutable.Set("d", "e"))
@@ -174,7 +174,7 @@ object AsmServiceHelper {
 
     println(callmap)
 
-  }
+  }*/
 
   /**
     *
@@ -217,16 +217,67 @@ object AsmServiceHelper {
   }
 
 
-  def getServiceImplActionMethod(classIsService: List[String], serviceAction: mutable.Map[String, String], methodsImpl: collection.mutable.Map[String, collection.mutable.Set[String]]): Unit = {
+  def getServiceImplActionMethod(classIsService: List[String], serviceAction: mutable.Map[String, mutable.Set[String]], methodsImpl: collection.mutable.Map[String, collection.mutable.Set[String]]): Unit = {
     classIsService.foreach(is => {
       try {
         val cr2: ClassReader = new ClassReader(new FileInputStream(is))
-        cr2.accept(new ServiceActionClassVisitor(serviceAction,methodsImpl), flags)
+        cr2.accept(new ServiceActionClassVisitor(serviceAction, methodsImpl), flags)
       } catch {
         case e: Exception =>
       }
     })
   }
 
+
+  /**
+    * filter
+    *
+    * @return
+    */
+  def filterMethod(callMap: mutable.Map[String, mutable.Set[String]], callClientSet: mutable.Set[String]): mutable.Map[String, mutable.Set[String]] = {
+    val callClient = callClientSet.map(call => call.substring(call.indexOf(".") + 1))
+    val filterMap = mutable.Map[String, mutable.Set[String]]()
+    val subCallMap = callMap.map(call => (call._1 -> call._2.map(ca => ca.substring(0, ca.indexOf(".")))))
+
+
+    val res = subCallMap.map(sub => (sub._1 -> (sub._2 intersect (callClient))))
+
+    res
+  }
+
+  /**
+    * service to action
+    *
+    * @param serviceAction
+    * @param actionMap
+    */
+  def associatedServiceAndAction(serviceAction: mutable.Map[String, mutable.Set[String]], actionMap: mutable.Map[String, mutable.Set[String]]): mutable.Map[String, mutable.Set[String]] = {
+    val finalMap = mutable.Map[String, mutable.Set[String]]()
+    val actionMapSub = actionMap.map(x => (x._1.substring(0, x._1.indexOf(".")), x._2))
+
+    serviceAction.foreach(service => {
+      actionMapSub.foreach(action => {
+        if (service._2.contains(action._1)) {
+          finalMap.get(service._1) match {
+            case Some(x) => x ++= action._2
+            case None => finalMap += (service._1 -> action._2)
+          }
+        }
+      })
+    })
+
+
+    /*actionMap.foreach(action => {
+      serviceAction.map(service => {
+        if (action._1.equals(service._2)) {
+          finalMap.get(service._1) match {
+            case Some(x) => x ++= action._2
+            case None => finalMap += (service._1 -> action._2)
+          }
+        }
+      })
+    })*/
+    finalMap
+  }
 
 }

@@ -198,7 +198,9 @@ private class FieldsClassVisitor(val callClientMap: collection.mutable.Set[Strin
     val fieldName = desc.substring(1, desc.length - 1)
     //    println(s"$className  --->  $name ----->  ${fieldName}")
     if (fieldName.endsWith("Client")) {
+      //TODO
       callClientMap += s"${className}.${fieldName}"
+      //      callClientMap += fieldName
     }
     super.visitField(access, name, desc, signature, value)
   }
@@ -455,7 +457,7 @@ private class ServiceImplClassVisitor(val servicesApi: collection.mutable.Set[St
 /**
   * 查找出实现类的 方法 调用 的 action
   */
-private class ServiceActionClassVisitor(val serviceAction: mutable.Map[String, String], val methodsImpl: collection.mutable.Map[String, collection.mutable.Set[String]]) extends ClassVisitor(ASM5) {
+private class ServiceActionClassVisitor(val serviceAction: mutable.Map[String, mutable.Set[String]], val methodsImpl: collection.mutable.Map[String, collection.mutable.Set[String]]) extends ClassVisitor(ASM5) {
   var className: String = _
 
 
@@ -466,7 +468,7 @@ private class ServiceActionClassVisitor(val serviceAction: mutable.Map[String, S
 
   override def visitMethod(access: Int, name: String, desc: String, signature: String, exceptions: Array[String]): MethodVisitor = {
     cv match {
-      case null => new ServiceActionMethodVisitor(this, name, signature, serviceAction, methodsImpl)
+      case null => new ServiceActionMethodVisitor(this, name, signature, serviceAction, methodsImpl, className)
       case _ => cv.visitMethod(access, name, desc, signature, exceptions)
     }
   }
@@ -476,8 +478,27 @@ private class ServiceActionClassVisitor(val serviceAction: mutable.Map[String, S
 /**
   * service method visitor
   * 改变方法里的逻辑，获取方法内部的逻辑
+  *
+  * _1 = "com/today/service/skuprice/SkuPriceServiceImpl"
+  *
+  * _2 = {HashSet@1297} "HashSet" size = 15
+  * 0 = "listSkuSellingPrice"
+  * 1 = "listSkuSellingPriceJournal"
+  * 2 = "approveStoreSkuPrice"
+  * 3 = "deleteSkuSellingPriceById"
+  * 4 = "modifySkuSellingPriceByBatch"
+  * 5 = "listStoreSkuPriceJournal"
+  * 6 = "createSkuSellingPriceByBatch"
+  * 7 = "modifySkuPriceByBatch"
+  * 8 = "deleteStoreSkuPriceById"
+  * 9 = "<init>"
+  * 10 = "createStoreSkuPrice"
+  * 11 = "listStoreSkuPriceByStoreCode"
+  * 12 = "listStoreSkuPrice"
+  * 13 = "approveSkuSellingPrice"
+  * 14 = "getStoreSkuPriceById"
   */
-private class ServiceActionMethodVisitor(var clsVisitor: ServiceActionClassVisitor, var name: String, var signature: String, val serviceAction: mutable.Map[String, String], val methodsImpl: collection.mutable.Map[String, collection.mutable.Set[String]]) extends MethodVisitor(ASM5) {
+private class ServiceActionMethodVisitor(var clsVisitor: ServiceActionClassVisitor, var name: String, var signature: String, val serviceAction: mutable.Map[String, mutable.Set[String]], val methodsImpl: collection.mutable.Map[String, collection.mutable.Set[String]], val className: String) extends MethodVisitor(ASM5) {
 
   /**
     * visitor method
@@ -489,29 +510,28 @@ private class ServiceActionMethodVisitor(var clsVisitor: ServiceActionClassVisit
     * @param itf   该方法是不是属于一个接口类
     *
     *  clsVisitor.name 查询是在哪个类里调用了这个服务，这个方法
-    *
+    *              x
     */
   override def visitMethodInsn(opcode: Int, owner: String, name: String, desc: String, itf: Boolean): Unit = {
-
+    var isServiceImpl = false
     methodsImpl.foreach(method => {
-      println("what are you doing ?")
+      if (method._1.equals(className)) {
+        isServiceImpl = true
+      }
     })
 
 
-    /*callClientSet.foreach(cc => {
-      val callList = cc.split("\\.").toList
-      //owner
-      if (callList(1).equals(owner)) {
-        //        System.out.println(s"<-------> owner: ${owner} , name: ${name} , desc: ${desc}, methodName: ${this.name}, className: ${clsVisitor.className}")
-        //形式如下 com/today/service/goods/query/ListSkuByConditionsQuery.action
-        val mapKey = s"${clsVisitor.className}.${this.name}"
-        val value = s"${owner}.${name}"
-        callAssociated.get(mapKey) match {
-          case Some(x) => x += value
-          case None => callAssociated += (mapKey -> mutable.Set(value))
-        }
+    if (isServiceImpl) {
+      val methodName = this.name
+      val key = className + "." + methodName
+      serviceAction.get(key) match {
+        case Some(x) => x += owner
+        case None => serviceAction += (key -> mutable.Set(owner))
       }
 
-    })*/
+    }
+    //    System.out.println(s"<-------> owner: ${owner} , name: ${name} , desc: ${desc}, methodName: ${this.name}, className: ${clsVisitor.className}")
   }
+
+
 }
