@@ -17,21 +17,28 @@ object GoodsAsmTest {
 
 
   val flags = ClassReader.SKIP_DEBUG
-
+  // api
   val services = collection.mutable.Set[String]()
-
+  // serviceImpl
+  val servicesImpl = collection.mutable.Set[String]()
+  //api
   val methods = collection.mutable.Map[String, collection.mutable.Set[String]]()
+  // impl
+  val methodsImpl = collection.mutable.Map[String, collection.mutable.Set[String]]()
   //  val isCached = collection.mutable.Map[String, InputStream]()
   val callClientSet = collection.mutable.Set[String]()
 
   val callAssociated = collection.mutable.Map[String, mutable.Set[String]]()
+
+
+  val callMap = mutable.Map[String, mutable.Set[String]]()
 
   /**
     *
     * @param args
     */
   def main(args: Array[String]): Unit = {
-    val begin = System.currentTimeMillis();
+    val begin = System.currentTimeMillis()
     //第一步，找到所有的 Service 和 Client 类，存到 Map 中
     AsmServiceHelper.getServiceAndClient(classIs, services)
     //第二步，查找这些service和client的方法
@@ -41,74 +48,44 @@ object GoodsAsmTest {
     callClientSet.foreach(println)
     //第四步，扫描goods_services 下所有class，遍历，如果方法里面有某个方法调用，而调用者是
     AsmServiceHelper.getCalledMethod(classIsServiceFile, callClientSet, callAssociated)
-    callAssociated.foreach(println)
-    println(System.currentTimeMillis()-begin)
+    //    callAssociated.foreach(println)
+
+    //第五步，查询哪些方法调用了第四步查询出来的方法。
+    AsmServiceHelper.getCalledMethodSecond(classIsServiceFile, callAssociated)
+    println("第五步 size: " + callAssociated.size)
+
+    //第六步，查询哪些方法调用了第四步查询出来的方法。
+    AsmServiceHelper.getCalledMethodSecond(classIsServiceFile, callAssociated)
+    println("第六步 size: " + callAssociated.size)
+
+    //第七步，查询哪些方法调用了第四步查询出来的方法。
+    AsmServiceHelper.getCalledMethodSecond(classIsServiceFile, callAssociated)
+    println("第七步 size: " + callAssociated.size)
+
+
+    //第八步，查询哪些方法调用了第四步查询出来的方法。
+    AsmServiceHelper.getCalledMethodSecond(classIsServiceFile, callAssociated)
+
+    println((System.currentTimeMillis() - begin))
+
+    /*callAssociated.foreach(x => {
+      println(s"key: ${x._1}   value: ${x._2}")
+    })*/
+    println("第九步")
+    //第九步 format
+    AsmServiceHelper.formatMap(callAssociated, callMap)
+    callMap.size
+
+    //第十步1，找到所有的 Service 和 Client 类，存到 Map 中
+    AsmServiceHelper.getServiceImpl(classIsServiceFile, services, servicesImpl)
+    //第十步2，查找这些service和client的方法
+    AsmServiceHelper.getServiceImplMethod(classIsServiceFile, servicesImpl, methodsImpl)
+    println(methodsImpl)
+
+
   }
 
-  /*
-
-
-
-      /**
-        * 第三步， 查找这些服务的方法
-        */
-
-
-      classIs.foreach(is => {
-        try {
-          val cr2: ClassReader = new ClassReader(is._2)
-
-          cr2.accept(new MethodClassVisitor(services, methods), flags)
-          println()
-        } catch {
-          case e: Exception => System.err.println(is._1)
-        }
-
-      })
-      methods.values.foreach(k => println(k))
-
-
-      /**
-        * 第四步， 扫描A包下的所有的类，查找所有对services 下的方法的调用集合， 设为 calls: List<Method -> Method>
-        */
-      classIsService.foreach(is => {
-        try {
-          val cr2: ClassReader = new ClassReader(is._2)
-
-          cr2.accept(new CalledClassVisitor(services, methods), flags)
-          println()
-        } catch {
-          case e: Exception => System.err.println(is._1)
-        }
-
-      })
-      //    /Users/maple/ideaspace/product/goods/goods-service/target/classes/com/today/service/goods/GoodsServiceImpl.class
-
-      try {
-        //GoodsServiceImpl
-        //            val cr2: ClassReader = new ClassReader(new FileInputStream("/Users/maple/ideaspace/product/goods/goods-service/target/classes/com/today/service/goods/GoodsServiceImpl.class"))
-        val cr2: ClassReader = new ClassReader(new FileInputStream("/Users/maple/ideaspace/product/goods/goods-service/target/classes/com/today/service/goods/query/ListSkuByDetailByNosQuery.class"))
-
-        //      val cr2: ClassReader = new ClassReader(new FileInputStream("/Users/maple/ideaspace/product/goods/goods-service/target/classes/com/today/commons/GoodsUtil.class"))
-        //      val cr2: ClassReader = new ClassReader(new FileInputStream("/Users/maple/ideaspace/product/goods/goods-service/target/classes/com/today/service/skuprice/action/sql/SkuPriceActionSql$.class"))
-
-        //      val cr2: ClassReader = new ClassReader(new FileInputStream("/Users/maple/ideaspace/product/goods/goods-service/target/classes/com/today/service/skuprice/SkuPriceServiceImpl.class"))
-
-
-        //      /Users/maple/ideaspace/product/goods/goods-service/target/classes/com/today/commons/GoodsUtil.class
-
-
-        cr2.accept(new CalledClassVisitor(services, methods), flags)
-        println()
-      } catch {
-        case e: Exception => System.err.println("exception")
-
-
-      }
-
-
-    }
-  }*/
+ /*
 
 
   private class MyFieldVisitor() extends FieldVisitor(ASM5) {
@@ -200,7 +177,7 @@ object GoodsAsmTest {
 
 
   }
-
+*/
 }
 
 
