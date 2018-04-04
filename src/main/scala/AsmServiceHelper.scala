@@ -4,7 +4,6 @@ import java.io.FileInputStream
 
 import org.objectweb.asm.ClassReader
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 
 /**
@@ -213,6 +212,18 @@ object AsmServiceHelper {
         cr2.accept(new MethodClassVisitor(services, methods), flags)
       } catch {
         case e: Exception => /* System.err.println(is._1)*/
+      }
+    })
+  }
+
+
+  def getServiceImplActionMethod(classIsService: List[String], serviceAction: mutable.Map[String, String], methodsImpl: collection.mutable.Map[String, collection.mutable.Set[String]]): Unit = {
+    classIsService.foreach(is => {
+      try {
+        val cr2: ClassReader = new ClassReader(new FileInputStream(is))
+        cr2.accept(new ServiceActionClassVisitor(serviceAction,methodsImpl), flags)
+      } catch {
+        case e: Exception =>
       }
     })
   }
